@@ -3,6 +3,7 @@ import auth0 from "auth0-js";
 const REDIRECT_ON_LOGIN = "redirect_on_login";
 
 // Stored outside class since private
+// eslint-disable-next-line
 let _idToken = null;
 let _accessToken = null;
 let _scopes = null;
@@ -13,14 +14,13 @@ export default class Auth {
     this.history = history;
     this.userProfile = null;
     this.requestedScopes = "openid profile email read:courses";
-
     this.auth0 = new auth0.WebAuth({
       domain: process.env.REACT_APP_AUTH0_DOMAIN,
       clientID: process.env.REACT_APP_AUTH0_CLIENT_ID,
       redirectUri: process.env.REACT_APP_AUTH0_CALLBACK_URL,
+      audience: process.env.REACT_APP_AUTH0_AUDIENCE,
       responseType: "token id_token",
       scope: this.requestedScopes,
-      audience: process.env.REACT_APP_AUTH0_AUDIENCE,
     });
   }
 
@@ -63,6 +63,7 @@ export default class Auth {
 
     _accessToken = authResult.accessToken;
     _idToken = authResult.idToken;
+    this.scheduleTokenRenewal();
   };
 
   isAuthenticated() {
@@ -94,5 +95,21 @@ export default class Auth {
   userHasScopes(scopes) {
     const grantedScopes = (_scopes || "").split(" ");
     return scopes.every((scope) => grantedScopes.includes(scope));
+  }
+
+  renewToken(cb) {
+    this.auth0.checkSession({}, (err, result) => {
+      if (err) {
+        console.log(`Error: ${err.error} - ${err.error_description}.`);
+      } else {
+        this.setSession(result);
+      }
+      if (cb) cb(err, result);
+    });
+  }
+
+  scheduleTokenRenewal() {
+    const delay = _expiresAt - Date.now();
+    if (delay > 0) setTimeout(() => this.renewToken(), delay);
   }
 }

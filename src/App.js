@@ -14,15 +14,26 @@ import AuthContext from "./AuthContext";
 class App extends Component {
   constructor(props) {
     super(props);
-    this.state = { auth: new Auth(this.props.history) };
+    this.state = {
+      auth: new Auth(this.props.history),
+      tokenRenewalComplete: false,
+    };
+  }
+
+  componentDidMount() {
+    this.state.auth.renewToken(() =>
+      this.setState({ tokenRenewalComplete: true })
+    );
   }
 
   render() {
     const { auth } = this.state;
+    // Show loading message until the token renewal check is completed.
+    if (!this.state.tokenRenewalComplete) return "Loading...";
     return (
       <AuthContext.Provider value={auth}>
+        <Nav auth={auth} />
         <div className="body">
-          <Nav auth={auth} />
           <Route
             path="/"
             exact
@@ -32,14 +43,13 @@ class App extends Component {
             path="/callback"
             render={(props) => <Callback auth={auth} {...props} />}
           />
-          <Route path="/public" component={Public} />
-
           <PrivateRoute path="/profile" component={Profile} />
+          <Route path="/public" component={Public} />
           <PrivateRoute path="/private" component={Private} />
           <PrivateRoute
             path="/courses"
-            scopes={["read:courses"]}
             component={Courses}
+            scopes={["read:courses"]}
           />
         </div>
       </AuthContext.Provider>
