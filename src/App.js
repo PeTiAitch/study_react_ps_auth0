@@ -34,11 +34,10 @@ class App extends Component {
           />
           <Route path="/public" component={Public} />
 
-          <PrivateRoute path="/profile" component={Profile} auth={auth} />
-          <PrivateRoute path="/private" component={Private} auth={auth} />
+          <PrivateRoute path="/profile" component={Profile} />
+          <PrivateRoute path="/private" component={Private} />
           <PrivateRoute
             path="/courses"
-            auth={auth}
             scopes={["read:courses"]}
             component={Courses}
           />
